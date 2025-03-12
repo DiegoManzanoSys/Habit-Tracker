@@ -2,17 +2,23 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
-import AsyncStorage from "@react-native-async-storage/async-storage"
 import { format } from "date-fns"
+
+// Importar las dependencias de Firebase
+import { db } from "../firebaseConfig"
+import { useAuth } from "./AuthContext"
+import { collection, doc, setDoc, getDoc, query, where, getDocs, addDoc, orderBy } from "firebase/firestore"
 
 export type HabitType = "water" | "exercise" | "food"
 
+// Reemplazar la interfaz HabitLog para incluir un ID de Firestore
 export interface HabitLog {
   id: string
   type: HabitType
   value: number
   date: string
   timestamp: number
+  userId?: string
 }
 
 export interface HabitGoal {
@@ -51,50 +57,119 @@ const defaultStreaks: HabitStreak = {
 
 const HabitContext = createContext<HabitContextType | undefined>(undefined)
 
+// Modificar el HabitProvider para usar Firestore
 export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [logs, setLogs] = useState<HabitLog[]>([])
   const [goals, setGoals] = useState<HabitGoal>(defaultGoals)
   const [streaks, setStreaks] = useState<HabitStreak>(defaultStreaks)
+  const { user } = useAuth()
 
-  // Load data from storage on mount
+  // Cargar datos desde Firestore cuando el usuario cambia
   useEffect(() => {
     const loadData = async () => {
-      try {
-        const storedLogs = await AsyncStorage.getItem("habitLogs")
-        const storedGoals = await AsyncStorage.getItem("habitGoals")
-        const storedStreaks = await AsyncStorage.getItem("habitStreaks")
+      if (!user) {
+        // Si no hay usuario, usar valores predeterminados
+        setLogs([])
+        setGoals(defaultGoals)
+        setStreaks(defaultStreaks)
+        return
+      }
 
-        if (storedLogs) setLogs(JSON.parse(storedLogs))
-        if (storedGoals) setGoals(JSON.parse(storedGoals))
-        if (storedStreaks) setStreaks(JSON.parse(storedStreaks))
+      try {
+        // Cargar metas
+        const goalsDocRef = doc(db, `users/${user.uid}/habitGoals`, "goals")
+        const goalsDoc = await getDoc(goalsDocRef)
+
+        if (goalsDoc.exists()) {
+          setGoals(goalsDoc.data() as HabitGoal)
+        } else {
+          // Si no existen, crear con valores predeterminados
+          await setDoc(goalsDocRef, defaultGoals)
+        }
+
+        // Cargar rachas
+        const streaksDocRef = doc(db, `users/${user.uid}/habitStreaks`, "streaks")
+        const streaksDoc = await getDoc(streaksDocRef)
+
+        if (streaksDoc.exists()) {
+          setStreaks(streaksDoc.data() as HabitStreak)
+        } else {
+          // Si no existen, crear con valores predeterminados
+          await setDoc(streaksDocRef, defaultStreaks)
+        }
+
+        // Cargar registros
+        const today = new Date()
+        const sevenDaysAgo = new Date()
+        sevenDaysAgo.setDate(today.getDate() - 7)
+
+        const logsQuery = query(
+          collection(db, `users/${user.uid}/habitLogs`),
+          where("date", ">=", format(sevenDaysAgo, "yyyy-MM-dd")),
+          orderBy("date", "desc"),
+        )
+
+        const logsSnapshot = await getDocs(logsQuery)
+        const logsData: HabitLog[] = []
+
+        logsSnapshot.forEach((doc) => {
+          logsData.push({ id: doc.id, ...doc.data() } as HabitLog)
+        })
+
+        setLogs(logsData)
       } catch (error) {
         console.error("Error loading habit data:", error)
       }
     }
 
     loadData()
-  }, [])
+  }, [user])
 
-  // Save data to storage whenever it changes
-  useEffect(() => {
-    const saveData = async () => {
-      try {
-        await AsyncStorage.setItem("habitLogs", JSON.stringify(logs))
-        await AsyncStorage.setItem("habitGoals", JSON.stringify(goals))
-        await AsyncStorage.setItem("habitStreaks", JSON.stringify(streaks))
-      } catch (error) {
-        console.error("Error saving habit data:", error)
-      }
-    }
-
-    saveData()
-  }, [logs, goals, streaks])
-
-  // Update streaks whenever logs change
+  // Actualizar rachas cuando cambian los registros
   useEffect(() => {
     updateStreaks()
   }, [logs])
 
+  // Modificar la función addLog para usar Firestore
+  const addLog = async (type: HabitType, value: number) => {
+    if (!user) return
+
+    try {
+      const newLog = {
+        type,
+        value,
+        date: format(new Date(), "yyyy-MM-dd"),
+        timestamp: Date.now(),
+        userId: user.uid,
+      }
+
+      const docRef = await addDoc(collection(db, `users/${user.uid}/habitLogs`), newLog)
+
+      setLogs((prevLogs) => [...prevLogs, { ...newLog, id: docRef.id }])
+    } catch (error) {
+      console.error("Error adding log:", error)
+    }
+  }
+
+  // Modificar la función updateGoal para usar Firestore
+  const updateGoal = async (type: HabitType, value: number) => {
+    if (!user) return
+
+    try {
+      const newGoals = {
+        ...goals,
+        [type]: value,
+      }
+
+      await setDoc(doc(db, `users/${user.uid}/habitGoals`, "goals"), newGoals)
+
+      setGoals(newGoals)
+    } catch (error) {
+      console.error("Error updating goal:", error)
+    }
+  }
+
+  // El resto de las funciones permanecen iguales
   const updateStreaks = () => {
     const today = format(new Date(), "yyyy-MM-dd")
     const yesterday = format(new Date(Date.now() - 86400000), "yyyy-MM-dd")
@@ -121,25 +196,6 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     })
 
     setStreaks(newStreaks)
-  }
-
-  const addLog = (type: HabitType, value: number) => {
-    const newLog: HabitLog = {
-      id: Date.now().toString(),
-      type,
-      value,
-      date: format(new Date(), "yyyy-MM-dd"),
-      timestamp: Date.now(),
-    }
-
-    setLogs((prevLogs) => [...prevLogs, newLog])
-  }
-
-  const updateGoal = (type: HabitType, value: number) => {
-    setGoals((prevGoals) => ({
-      ...prevGoals,
-      [type]: value,
-    }))
   }
 
   const getTodayProgress = (type: HabitType): number => {

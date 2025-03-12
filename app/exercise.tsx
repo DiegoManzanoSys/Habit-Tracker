@@ -10,6 +10,8 @@ import { useHabit } from "../context/HabitContext"
 import { BottomTabBar } from "../components/BottomTabBar"
 import { PetAvatar } from "../components/PetAvatar"
 import { LineChart } from "react-native-chart-kit"
+// Importar el AuthGuard
+import { AuthGuard } from "../components/AuthGuard"
 
 const EXERCISE_TYPES = [
   { label: "Walking", value: 10, icon: "navigation", calories: 40 },
@@ -56,99 +58,113 @@ export default function ExerciseScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Feather name="arrow-left" size={24} color={theme.text} />
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.text }]}>Exercise Tracking</Text>
-        <View style={styles.placeholder} />
-      </View>
-
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        <View style={styles.petContainer}>
-          <PetAvatar size="small" showInfo={false} />
+    <AuthGuard>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Feather name="arrow-left" size={24} color={theme.text} />
+          </TouchableOpacity>
+          <Text style={[styles.title, { color: theme.text }]}>Exercise Tracking</Text>
+          <View style={styles.placeholder} />
         </View>
 
-        <LinearGradient colors={theme.exercise} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.progressCard}>
-          <View style={styles.progressContainer}>
-            <AnimatedCircularProgress
-              size={120}
-              width={12}
-              fill={percentage}
-              tintColor="white"
-              backgroundColor="rgba(255, 255, 255, 0.3)"
-              rotation={0}
-              lineCap="round"
-            >
-              {() => (
-                <View style={styles.progressTextContainer}>
-                  <Text style={styles.progressValue}>{exerciseProgress}</Text>
-                  <Text style={styles.progressUnit}>min</Text>
-                </View>
-              )}
-            </AnimatedCircularProgress>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+          <View style={styles.petContainer}>
+            <PetAvatar size="small" showInfo={false} />
+          </View>
 
-            <View style={styles.goalContainer}>
-              <Text style={styles.goalText}>Daily Goal: {exerciseGoal} min</Text>
-              <Text style={styles.streakText}>Current Streak: {streaks.exercise} days</Text>
-              <Text style={styles.percentageText}>{percentage}% Complete</Text>
+          <LinearGradient
+            colors={theme.exercise}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.progressCard}
+          >
+            <View style={styles.progressContainer}>
+              <AnimatedCircularProgress
+                size={120}
+                width={12}
+                fill={percentage}
+                tintColor="white"
+                backgroundColor="rgba(255, 255, 255, 0.3)"
+                rotation={0}
+                lineCap="round"
+              >
+                {() => (
+                  <View style={styles.progressTextContainer}>
+                    <Text style={styles.progressValue}>{exerciseProgress}</Text>
+                    <Text style={styles.progressUnit}>min</Text>
+                  </View>
+                )}
+              </AnimatedCircularProgress>
+
+              <View style={styles.goalContainer}>
+                <Text style={styles.goalText}>Daily Goal: {exerciseGoal} min</Text>
+                <Text style={styles.streakText}>Current Streak: {streaks.exercise} days</Text>
+                <Text style={styles.percentageText}>{percentage}% Complete</Text>
+              </View>
+            </View>
+          </LinearGradient>
+
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Add Exercise</Text>
+
+          <View style={styles.exerciseGrid}>
+            {EXERCISE_TYPES.map((item) => (
+              <TouchableOpacity
+                key={item.label}
+                style={[styles.exerciseButton, { backgroundColor: theme.card }]}
+                onPress={() => handleAddExercise(item.value)}
+              >
+                <Feather name={item.icon} size={24} color={theme.exercise[0]} />
+                <Text style={[styles.exerciseLabel, { color: theme.text }]}>{item.label}</Text>
+                <Text style={[styles.exerciseValue, { color: theme.text }]}>
+                  {item.value} min ({item.calories} cal)
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Weekly Progress</Text>
+
+          <View style={[styles.chartContainer, { backgroundColor: theme.card }]}>
+            <LineChart
+              data={chartData}
+              width={320}
+              height={220}
+              chartConfig={chartConfig}
+              style={styles.chart}
+              bezier
+            />
+          </View>
+
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Exercise Tips</Text>
+
+          <View style={[styles.tipsContainer, { backgroundColor: theme.card }]}>
+            <View style={styles.tipItem}>
+              <Feather name="info" size={20} color={theme.exercise[0]} style={styles.tipIcon} />
+              <Text style={[styles.tipText, { color: theme.text }]}>
+                Start with short sessions and gradually increase duration.
+              </Text>
+            </View>
+
+            <View style={styles.tipItem}>
+              <Feather name="info" size={20} color={theme.exercise[0]} style={styles.tipIcon} />
+              <Text style={[styles.tipText, { color: theme.text }]}>
+                Mix cardio and strength training for optimal health benefits.
+              </Text>
+            </View>
+
+            <View style={styles.tipItem}>
+              <Feather name="info" size={20} color={theme.exercise[0]} style={styles.tipIcon} />
+              <Text style={[styles.tipText, { color: theme.text }]}>
+                Remember to warm up before and cool down after exercise.
+              </Text>
             </View>
           </View>
-        </LinearGradient>
+        </ScrollView>
 
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Add Exercise</Text>
-
-        <View style={styles.exerciseGrid}>
-          {EXERCISE_TYPES.map((item) => (
-            <TouchableOpacity
-              key={item.label}
-              style={[styles.exerciseButton, { backgroundColor: theme.card }]}
-              onPress={() => handleAddExercise(item.value)}
-            >
-              <Feather name={item.icon} size={24} color={theme.exercise[0]} />
-              <Text style={[styles.exerciseLabel, { color: theme.text }]}>{item.label}</Text>
-              <Text style={[styles.exerciseValue, { color: theme.text }]}>
-                {item.value} min ({item.calories} cal)
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Weekly Progress</Text>
-
-        <View style={[styles.chartContainer, { backgroundColor: theme.card }]}>
-          <LineChart data={chartData} width={320} height={220} chartConfig={chartConfig} style={styles.chart} bezier />
-        </View>
-
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Exercise Tips</Text>
-
-        <View style={[styles.tipsContainer, { backgroundColor: theme.card }]}>
-          <View style={styles.tipItem}>
-            <Feather name="info" size={20} color={theme.exercise[0]} style={styles.tipIcon} />
-            <Text style={[styles.tipText, { color: theme.text }]}>
-              Start with short sessions and gradually increase duration.
-            </Text>
-          </View>
-
-          <View style={styles.tipItem}>
-            <Feather name="info" size={20} color={theme.exercise[0]} style={styles.tipIcon} />
-            <Text style={[styles.tipText, { color: theme.text }]}>
-              Mix cardio and strength training for optimal health benefits.
-            </Text>
-          </View>
-
-          <View style={styles.tipItem}>
-            <Feather name="info" size={20} color={theme.exercise[0]} style={styles.tipIcon} />
-            <Text style={[styles.tipText, { color: theme.text }]}>
-              Remember to warm up before and cool down after exercise.
-            </Text>
-          </View>
-        </View>
-      </ScrollView>
-
-      <BottomTabBar />
-    </SafeAreaView>
+        <BottomTabBar />
+      </SafeAreaView>
+    </AuthGuard>
   )
 }
 

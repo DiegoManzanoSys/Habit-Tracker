@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Slot, SplashScreen } from "expo-router"
+import { Slot } from "expo-router"
 import { View, Text } from "react-native"
 import { StatusBar } from "expo-status-bar"
 import { SafeAreaProvider } from "react-native-safe-area-context"
@@ -12,6 +12,17 @@ import * as FileSystem from "expo-file-system"
 import { ThemeProvider } from "../context/ThemeContext"
 import { HabitProvider } from "../context/HabitContext"
 import { PetProvider } from "../context/PetContext"
+// Importar el AuthProvider
+import { AuthProvider } from "../context/AuthContext"
+
+// Configure notifications
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+})
 
 const fontsToLoad = {
   "Poppins-Regular": "https://fonts.gstatic.com/s/poppins/v20/pxiEyp8kv8JHgFVrFJA.ttf",
@@ -22,7 +33,7 @@ const fontsToLoad = {
 // Función para descargar la fuente y almacenarla en caché
 async function loadRemoteFont(name: string, url: string) {
   const fontPath = `${FileSystem.cacheDirectory}${name}.ttf`
-  
+
   // Verificar si la fuente ya existe en caché
   const fileInfo = await FileSystem.getInfoAsync(fontPath)
   if (!fileInfo.exists) {
@@ -46,7 +57,7 @@ export default function RootLayout() {
           Object.entries(fontsToLoad).map(async ([name, url]) => {
             const fontPath = await loadRemoteFont(name, url)
             return [name, { uri: fontPath }]
-          })
+          }),
         )
 
         // Cargar las fuentes en expo-font
@@ -63,7 +74,7 @@ export default function RootLayout() {
 
   if (!fontsLoaded) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <Text>Loading...</Text>
       </View>
     )
@@ -73,14 +84,18 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <HabitProvider>
-            <PetProvider>
-              <StatusBar style="auto" />
-              <Slot />
-            </PetProvider>
-          </HabitProvider>
+          {/* Añadir el AuthProvider entre ThemeProvider y HabitProvider */}
+          <AuthProvider>
+            <HabitProvider>
+              <PetProvider>
+                <StatusBar style="auto" />
+                <Slot />
+              </PetProvider>
+            </HabitProvider>
+          </AuthProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   )
 }
+

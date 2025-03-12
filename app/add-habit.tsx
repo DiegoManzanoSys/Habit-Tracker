@@ -11,6 +11,8 @@ import { useHabit, type HabitType } from "../context/HabitContext"
 import { BottomTabBar } from "../components/BottomTabBar"
 import { PetAvatar } from "../components/PetAvatar"
 import * as Haptics from "expo-haptics"
+// Importar el AuthGuard
+import { AuthGuard } from "../components/AuthGuard"
 
 export default function AddHabitScreen() {
   const { theme } = useTheme()
@@ -72,80 +74,82 @@ export default function AddHabitScreen() {
   const selectedHabitData = habits.find((h) => h.type === selectedHabit)
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.text }]}>Add Habit</Text>
-      </View>
-
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        <View style={styles.petContainer}>
-          <PetAvatar size="small" showInfo={false} />
+    <AuthGuard>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: theme.text }]}>Add Habit</Text>
         </View>
 
-        {!selectedHabit ? (
-          <>
-            <Text style={[styles.subtitle, { color: theme.text }]}>What habit would you like to track today?</Text>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+          <View style={styles.petContainer}>
+            <PetAvatar size="small" showInfo={false} />
+          </View>
 
-            {habits.map((habit) => (
-              <TouchableOpacity key={habit.type} onPress={() => handleSelectHabit(habit.type)} activeOpacity={0.9}>
-                <LinearGradient
-                  colors={habit.gradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.habitCard}
+          {!selectedHabit ? (
+            <>
+              <Text style={[styles.subtitle, { color: theme.text }]}>What habit would you like to track today?</Text>
+
+              {habits.map((habit) => (
+                <TouchableOpacity key={habit.type} onPress={() => handleSelectHabit(habit.type)} activeOpacity={0.9}>
+                  <LinearGradient
+                    colors={habit.gradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.habitCard}
+                  >
+                    <Feather name={habit.icon} size={24} color="white" />
+                    <View style={styles.habitInfo}>
+                      <Text style={styles.habitTitle}>{habit.title}</Text>
+                      <Text style={styles.habitDescription}>{habit.description}</Text>
+                    </View>
+                    <Feather name="chevron-right" size={24} color="white" />
+                  </LinearGradient>
+                </TouchableOpacity>
+              ))}
+            </>
+          ) : (
+            <>
+              <View style={styles.backButtonContainer}>
+                <TouchableOpacity
+                  onPress={() => setSelectedHabit(null)}
+                  style={[styles.backButton, { backgroundColor: theme.card }]}
                 >
-                  <Feather name={habit.icon} size={24} color="white" />
-                  <View style={styles.habitInfo}>
-                    <Text style={styles.habitTitle}>{habit.title}</Text>
-                    <Text style={styles.habitDescription}>{habit.description}</Text>
-                  </View>
-                  <Feather name="chevron-right" size={24} color="white" />
-                </LinearGradient>
-              </TouchableOpacity>
-            ))}
-          </>
-        ) : (
-          <>
-            <View style={styles.backButtonContainer}>
-              <TouchableOpacity
-                onPress={() => setSelectedHabit(null)}
-                style={[styles.backButton, { backgroundColor: theme.card }]}
+                  <Feather name="arrow-left" size={20} color={theme.text} />
+                  <Text style={[styles.backButtonText, { color: theme.text }]}>Back</Text>
+                </TouchableOpacity>
+              </View>
+
+              <LinearGradient
+                colors={selectedHabitData?.gradient || [theme.accent, theme.accent]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.selectedHabitHeader}
               >
-                <Feather name="arrow-left" size={20} color={theme.text} />
-                <Text style={[styles.backButtonText, { color: theme.text }]}>Back</Text>
-              </TouchableOpacity>
-            </View>
+                <Feather name={selectedHabitData?.icon || "activity"} size={32} color="white" />
+                <Text style={styles.selectedHabitTitle}>{selectedHabitData?.title}</Text>
+              </LinearGradient>
 
-            <LinearGradient
-              colors={selectedHabitData?.gradient || [theme.accent, theme.accent]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.selectedHabitHeader}
-            >
-              <Feather name={selectedHabitData?.icon || "activity"} size={32} color="white" />
-              <Text style={styles.selectedHabitTitle}>{selectedHabitData?.title}</Text>
-            </LinearGradient>
+              <Text style={[styles.optionsTitle, { color: theme.text }]}>Choose an amount to log:</Text>
 
-            <Text style={[styles.optionsTitle, { color: theme.text }]}>Choose an amount to log:</Text>
+              {selectedHabitData?.options.map((option) => (
+                <TouchableOpacity
+                  key={option.label}
+                  style={[styles.optionButton, { backgroundColor: theme.card }]}
+                  onPress={() => handleAddHabit(selectedHabitData.type, option.value)}
+                >
+                  <Text style={[styles.optionLabel, { color: theme.text }]}>{option.label}</Text>
+                  <Text style={[styles.optionValue, { color: theme.text }]}>
+                    {option.value} {option.unit}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </>
+          )}
+        </ScrollView>
 
-            {selectedHabitData?.options.map((option) => (
-              <TouchableOpacity
-                key={option.label}
-                style={[styles.optionButton, { backgroundColor: theme.card }]}
-                onPress={() => handleAddHabit(selectedHabitData.type, option.value)}
-              >
-                <Text style={[styles.optionLabel, { color: theme.text }]}>{option.label}</Text>
-                <Text style={[styles.optionValue, { color: theme.text }]}>
-                  {option.value} {option.unit}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </>
-        )}
-      </ScrollView>
-
-      <BottomTabBar />
-    </SafeAreaView>
+        <BottomTabBar />
+      </SafeAreaView>
+    </AuthGuard>
   )
 }
 

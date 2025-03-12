@@ -7,33 +7,38 @@ import { useTheme } from "../context/ThemeContext"
 import { PetAvatar } from "../components/PetAvatar"
 import { HabitCard } from "../components/HabitCard"
 import { BottomTabBar } from "../components/BottomTabBar"
+// Importar el AuthGuard
+import { AuthGuard } from "../components/AuthGuard"
 
+// Modificar el componente Home para usar AuthGuard
 export default function Home() {
   const { theme } = useTheme()
   const router = useRouter()
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <StatusBar style={theme.isDark ? "light" : "dark"} />
+    <AuthGuard>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <StatusBar style={theme.isDark ? "light" : "dark"} />
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: theme.text }]}>HealthyHabits</Text>
-        </View>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+          <View style={styles.header}>
+            <Text style={[styles.title, { color: theme.text }]}>HealthyHabits</Text>
+          </View>
 
-        <PetAvatar />
+          <PetAvatar />
 
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Today's Habits</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Today's Habits</Text>
 
-        <HabitCard type="water" title="Water Intake" icon="droplet" onPress={() => router.push("/water")} />
+          <HabitCard type="water" title="Water Intake" icon="droplet" onPress={() => router.push("/water")} />
 
-        <HabitCard type="exercise" title="Exercise" icon="activity" onPress={() => router.push("/exercise")} />
+          <HabitCard type="exercise" title="Exercise" icon="activity" onPress={() => router.push("/exercise")} />
 
-        <HabitCard type="food" title="Healthy Eating" icon="coffee" onPress={() => router.push("/food")} />
-      </ScrollView>
+          <HabitCard type="food" title="Healthy Eating" icon="coffee" onPress={() => router.push("/food")} />
+        </ScrollView>
 
-      <BottomTabBar />
-    </SafeAreaView>
+        <BottomTabBar />
+      </SafeAreaView>
+    </AuthGuard>
   )
 }
 

@@ -11,6 +11,9 @@ import { BottomTabBar } from "../components/BottomTabBar"
 import { PetAvatar } from "../components/PetAvatar"
 import { BarChart } from "react-native-chart-kit"
 
+// Importar el AuthGuard
+import { AuthGuard } from "../components/AuthGuard"
+
 const FOOD_CATEGORIES = [
   { label: "Fruits", value: 1, icon: "apple", calories: 80 },
   { label: "Vegetables", value: 1, icon: "coffee", calories: 50 },
@@ -20,6 +23,7 @@ const FOOD_CATEGORIES = [
   { label: "Nuts", value: 1, icon: "hexagon", calories: 170 },
 ]
 
+// Modificar el componente FoodScreen para usar AuthGuard
 export default function FoodScreen() {
   const { theme } = useTheme()
   const { getTodayProgress, getWeeklyProgress, goals, addLog, streaks } = useHabit()
@@ -53,107 +57,109 @@ export default function FoodScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Feather name="arrow-left" size={24} color={theme.text} />
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.text }]}>Healthy Eating</Text>
-        <View style={styles.placeholder} />
-      </View>
-
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        <View style={styles.petContainer}>
-          <PetAvatar size="small" showInfo={false} />
+    <AuthGuard>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Feather name="arrow-left" size={24} color={theme.text} />
+          </TouchableOpacity>
+          <Text style={[styles.title, { color: theme.text }]}>Healthy Eating</Text>
+          <View style={styles.placeholder} />
         </View>
 
-        <LinearGradient colors={theme.food} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.progressCard}>
-          <View style={styles.progressContainer}>
-            <AnimatedCircularProgress
-              size={120}
-              width={12}
-              fill={percentage}
-              tintColor="white"
-              backgroundColor="rgba(255, 255, 255, 0.3)"
-              rotation={0}
-              lineCap="round"
-            >
-              {() => (
-                <View style={styles.progressTextContainer}>
-                  <Text style={styles.progressValue}>{foodProgress}</Text>
-                  <Text style={styles.progressUnit}>portions</Text>
-                </View>
-              )}
-            </AnimatedCircularProgress>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+          <View style={styles.petContainer}>
+            <PetAvatar size="small" showInfo={false} />
+          </View>
 
-            <View style={styles.goalContainer}>
-              <Text style={styles.goalText}>Daily Goal: {foodGoal} portions</Text>
-              <Text style={styles.streakText}>Current Streak: {streaks.food} days</Text>
-              <Text style={styles.percentageText}>{percentage}% Complete</Text>
+          <LinearGradient colors={theme.food} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.progressCard}>
+            <View style={styles.progressContainer}>
+              <AnimatedCircularProgress
+                size={120}
+                width={12}
+                fill={percentage}
+                tintColor="white"
+                backgroundColor="rgba(255, 255, 255, 0.3)"
+                rotation={0}
+                lineCap="round"
+              >
+                {() => (
+                  <View style={styles.progressTextContainer}>
+                    <Text style={styles.progressValue}>{foodProgress}</Text>
+                    <Text style={styles.progressUnit}>portions</Text>
+                  </View>
+                )}
+              </AnimatedCircularProgress>
+
+              <View style={styles.goalContainer}>
+                <Text style={styles.goalText}>Daily Goal: {foodGoal} portions</Text>
+                <Text style={styles.streakText}>Current Streak: {streaks.food} days</Text>
+                <Text style={styles.percentageText}>{percentage}% Complete</Text>
+              </View>
+            </View>
+          </LinearGradient>
+
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Add Healthy Food</Text>
+
+          <View style={styles.foodGrid}>
+            {FOOD_CATEGORIES.map((item) => (
+              <TouchableOpacity
+                key={item.label}
+                style={[styles.foodButton, { backgroundColor: theme.card }]}
+                onPress={() => handleAddFood(item.value)}
+              >
+                <Feather name={item.icon} size={24} color={theme.food[0]} />
+                <Text style={[styles.foodLabel, { color: theme.text }]}>{item.label}</Text>
+                <Text style={[styles.foodValue, { color: theme.text }]}>
+                  {item.value} portion ({item.calories} cal)
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Weekly Progress</Text>
+
+          <View style={[styles.chartContainer, { backgroundColor: theme.card }]}>
+            <BarChart
+              data={chartData}
+              width={320}
+              height={220}
+              chartConfig={chartConfig}
+              style={styles.chart}
+              fromZero
+              showValuesOnTopOfBars
+            />
+          </View>
+
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Nutrition Tips</Text>
+
+          <View style={[styles.tipsContainer, { backgroundColor: theme.card }]}>
+            <View style={styles.tipItem}>
+              <Feather name="info" size={20} color={theme.food[0]} style={styles.tipIcon} />
+              <Text style={[styles.tipText, { color: theme.text }]}>
+                Aim for at least 5 portions of fruits and vegetables daily.
+              </Text>
+            </View>
+
+            <View style={styles.tipItem}>
+              <Feather name="info" size={20} color={theme.food[0]} style={styles.tipIcon} />
+              <Text style={[styles.tipText, { color: theme.text }]}>
+                Choose whole grains over refined grains for more nutrients and fiber.
+              </Text>
+            </View>
+
+            <View style={styles.tipItem}>
+              <Feather name="info" size={20} color={theme.food[0]} style={styles.tipIcon} />
+              <Text style={[styles.tipText, { color: theme.text }]}>
+                Include lean proteins and healthy fats in your meals for balanced nutrition.
+              </Text>
             </View>
           </View>
-        </LinearGradient>
+        </ScrollView>
 
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Add Healthy Food</Text>
-
-        <View style={styles.foodGrid}>
-          {FOOD_CATEGORIES.map((item) => (
-            <TouchableOpacity
-              key={item.label}
-              style={[styles.foodButton, { backgroundColor: theme.card }]}
-              onPress={() => handleAddFood(item.value)}
-            >
-              <Feather name={item.icon} size={24} color={theme.food[0]} />
-              <Text style={[styles.foodLabel, { color: theme.text }]}>{item.label}</Text>
-              <Text style={[styles.foodValue, { color: theme.text }]}>
-                {item.value} portion ({item.calories} cal)
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Weekly Progress</Text>
-
-        <View style={[styles.chartContainer, { backgroundColor: theme.card }]}>
-          <BarChart
-            data={chartData}
-            width={320}
-            height={220}
-            chartConfig={chartConfig}
-            style={styles.chart}
-            fromZero
-            showValuesOnTopOfBars
-          />
-        </View>
-
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Nutrition Tips</Text>
-
-        <View style={[styles.tipsContainer, { backgroundColor: theme.card }]}>
-          <View style={styles.tipItem}>
-            <Feather name="info" size={20} color={theme.food[0]} style={styles.tipIcon} />
-            <Text style={[styles.tipText, { color: theme.text }]}>
-              Aim for at least 5 portions of fruits and vegetables daily.
-            </Text>
-          </View>
-
-          <View style={styles.tipItem}>
-            <Feather name="info" size={20} color={theme.food[0]} style={styles.tipIcon} />
-            <Text style={[styles.tipText, { color: theme.text }]}>
-              Choose whole grains over refined grains for more nutrients and fiber.
-            </Text>
-          </View>
-
-          <View style={styles.tipItem}>
-            <Feather name="info" size={20} color={theme.food[0]} style={styles.tipIcon} />
-            <Text style={[styles.tipText, { color: theme.text }]}>
-              Include lean proteins and healthy fats in your meals for balanced nutrition.
-            </Text>
-          </View>
-        </View>
-      </ScrollView>
-
-      <BottomTabBar />
-    </SafeAreaView>
+        <BottomTabBar />
+      </SafeAreaView>
+    </AuthGuard>
   )
 }
 

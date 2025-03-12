@@ -2,8 +2,12 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
-import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useHabit } from "./HabitContext"
+
+// Importar las dependencias de Firebase
+import { db } from "../firebaseConfig"
+import { useAuth } from "./AuthContext"
+import { doc, getDoc, setDoc } from "firebase/firestore"
 
 export type PetMood = "happy" | "thirsty" | "lazy" | "hungry" | "sick" | "dead"
 
@@ -32,36 +36,54 @@ const initialPetState: PetState = {
 
 const PetContext = createContext<PetContextType | undefined>(undefined)
 
+// Modificar el PetProvider para usar Firestore
 export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [pet, setPet] = useState<PetState>(initialPetState)
   const { streaks, goals, getTodayProgress } = useHabit()
+  const { user } = useAuth()
 
-  // Load pet data from storage on mount
+  // Cargar datos de la mascota desde Firestore cuando el usuario cambia
   useEffect(() => {
     const loadPet = async () => {
+      if (!user) {
+        setPet(initialPetState)
+        return
+      }
+
       try {
-        const storedPet = await AsyncStorage.getItem("pet")
-        if (storedPet) setPet(JSON.parse(storedPet))
+        const petDocRef = doc(db, `users/${user.uid}/pet`, "petData")
+        const petDoc = await getDoc(petDocRef)
+
+        if (petDoc.exists()) {
+          setPet(petDoc.data() as PetState)
+        } else {
+          // Si no existe, crear con valores predeterminados
+          await setDoc(petDocRef, initialPetState)
+        }
       } catch (error) {
         console.error("Error loading pet data:", error)
       }
     }
 
     loadPet()
-  }, [])
+  }, [user])
 
-  // Save pet data to storage whenever it changes
+  // Guardar datos de la mascota en Firestore cuando cambian
   useEffect(() => {
     const savePet = async () => {
+      if (!user) return
+
       try {
-        await AsyncStorage.setItem("pet", JSON.stringify(pet))
+        await setDoc(doc(db, `users/${user.uid}/pet`, "petData"), pet)
       } catch (error) {
         console.error("Error saving pet data:", error)
       }
     }
 
-    savePet()
-  }, [pet])
+    if (user) {
+      savePet()
+    }
+  }, [pet, user])
 
   // Update pet mood based on habit streaks
   useEffect(() => {
@@ -102,6 +124,7 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }))
   }
 
+  // Modificar la función setPetName para usar Firestore
   const setPetName = (name: string) => {
     setPet((prev) => ({
       ...prev,

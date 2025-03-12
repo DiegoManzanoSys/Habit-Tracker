@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { View, Text, StyleSheet, Switch, TextInput, ScrollView } from "react-native"
+import { View, Text, StyleSheet, Switch, TextInput, ScrollView, TouchableOpacity } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Feather } from "@expo/vector-icons"
 import { useTheme } from "../context/ThemeContext"
@@ -10,11 +10,16 @@ import { usePet } from "../context/PetContext"
 import { BottomTabBar } from "../components/BottomTabBar"
 import { PetAvatar } from "../components/PetAvatar"
 import * as Notifications from "expo-notifications"
+// Importar el AuthGuard y useAuth
+import { AuthGuard } from "../components/AuthGuard"
+import { useAuth } from "../context/AuthContext"
 
+// Modificar el componente ProfileScreen para usar AuthGuard y añadir la opción de cerrar sesión
 export default function ProfileScreen() {
   const { theme, isDark, toggleTheme } = useTheme()
   const { goals, updateGoal } = useHabit()
   const { pet, setPetName } = usePet()
+  const { signOut, user } = useAuth()
 
   const [petName, setPetNameInput] = useState(pet.name)
   const [waterGoal, setWaterGoal] = useState(goals.water.toString())
@@ -46,136 +51,164 @@ export default function ProfileScreen() {
     }
   }
 
+  const handleSignOut = async () => {
+    try {
+      await signOut()
+    } catch (error) {
+      console.error("Error signing out:", error)
+    }
+  }
+
+  // Resto del código...
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.text }]}>Profile</Text>
-      </View>
-
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        <View style={styles.petSection}>
-          <PetAvatar size="large" showInfo={false} />
-
-          <View style={[styles.inputContainer, { backgroundColor: theme.card }]}>
-            <Text style={[styles.inputLabel, { color: theme.text }]}>Pet Name</Text>
-            <TextInput
-              style={[styles.input, { color: theme.text, borderColor: theme.border }]}
-              value={petName}
-              onChangeText={setPetNameInput}
-              onEndEditing={handleSavePetName}
-              placeholder="Enter pet name"
-              placeholderTextColor={theme.text + "80"}
-            />
-          </View>
-
-          <Text style={[styles.petStats, { color: theme.text }]}>
-            Level {pet.level} • Mood: {pet.mood.charAt(0).toUpperCase() + pet.mood.slice(1)}
-          </Text>
+    <AuthGuard>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: theme.text }]}>Profile</Text>
         </View>
 
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Daily Goals</Text>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+          <View style={styles.petSection}>
+            <PetAvatar size="large" showInfo={false} />
 
-          <View style={[styles.goalContainer, { backgroundColor: theme.card }]}>
-            <View style={styles.goalHeader}>
-              <Feather name="droplet" size={20} color={theme.water[0]} />
-              <Text style={[styles.goalTitle, { color: theme.text }]}>Water Intake</Text>
-            </View>
-            <View style={styles.goalInputContainer}>
+            <View style={[styles.inputContainer, { backgroundColor: theme.card }]}>
+              <Text style={[styles.inputLabel, { color: theme.text }]}>Pet Name</Text>
               <TextInput
-                style={[styles.goalInput, { color: theme.text, borderColor: theme.border }]}
-                value={waterGoal}
-                onChangeText={setWaterGoal}
-                onEndEditing={() => handleSaveGoal("water", waterGoal)}
-                keyboardType="number-pad"
+                style={[styles.input, { color: theme.text, borderColor: theme.border }]}
+                value={petName}
+                onChangeText={setPetNameInput}
+                onEndEditing={handleSavePetName}
+                placeholder="Enter pet name"
+                placeholderTextColor={theme.text + "80"}
               />
-              <Text style={[styles.goalUnit, { color: theme.text }]}>ml</Text>
             </View>
-          </View>
 
-          <View style={[styles.goalContainer, { backgroundColor: theme.card }]}>
-            <View style={styles.goalHeader}>
-              <Feather name="activity" size={20} color={theme.exercise[0]} />
-              <Text style={[styles.goalTitle, { color: theme.text }]}>Exercise</Text>
-            </View>
-            <View style={styles.goalInputContainer}>
-              <TextInput
-                style={[styles.goalInput, { color: theme.text, borderColor: theme.border }]}
-                value={exerciseGoal}
-                onChangeText={setExerciseGoal}
-                onEndEditing={() => handleSaveGoal("exercise", exerciseGoal)}
-                keyboardType="number-pad"
-              />
-              <Text style={[styles.goalUnit, { color: theme.text }]}>min</Text>
-            </View>
-          </View>
-
-          <View style={[styles.goalContainer, { backgroundColor: theme.card }]}>
-            <View style={styles.goalHeader}>
-              <Feather name="coffee" size={20} color={theme.food[0]} />
-              <Text style={[styles.goalTitle, { color: theme.text }]}>Healthy Eating</Text>
-            </View>
-            <View style={styles.goalInputContainer}>
-              <TextInput
-                style={[styles.goalInput, { color: theme.text, borderColor: theme.border }]}
-                value={foodGoal}
-                onChangeText={setFoodGoal}
-                onEndEditing={() => handleSaveGoal("food", foodGoal)}
-                keyboardType="number-pad"
-              />
-              <Text style={[styles.goalUnit, { color: theme.text }]}>portions</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Settings</Text>
-
-          <View style={[styles.settingContainer, { backgroundColor: theme.card }]}>
-            <View style={styles.settingContent}>
-              <Feather name="moon" size={20} color={theme.text} />
-              <Text style={[styles.settingTitle, { color: theme.text }]}>Dark Mode</Text>
-            </View>
-            <Switch
-              value={isDark}
-              onValueChange={toggleTheme}
-              trackColor={{ false: "#767577", true: theme.accent + "80" }}
-              thumbColor={isDark ? theme.accent : "#f4f3f4"}
-            />
-          </View>
-
-          <View style={[styles.settingContainer, { backgroundColor: theme.card }]}>
-            <View style={styles.settingContent}>
-              <Feather name="bell" size={20} color={theme.text} />
-              <Text style={[styles.settingTitle, { color: theme.text }]}>Notifications</Text>
-            </View>
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={toggleNotifications}
-              trackColor={{ false: "#767577", true: theme.accent + "80" }}
-              thumbColor={notificationsEnabled ? theme.accent : "#f4f3f4"}
-            />
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>About</Text>
-
-          <View style={[styles.aboutContainer, { backgroundColor: theme.card }]}>
-            <Text style={[styles.appName, { color: theme.text }]}>HealthyHabits</Text>
-            <Text style={[styles.appVersion, { color: theme.text }]}>Version 1.0.0</Text>
-            <Text style={[styles.appDescription, { color: theme.text }]}>
-              Track your daily habits and stay healthy with your virtual pet companion.
+            <Text style={[styles.petStats, { color: theme.text }]}>
+              Level {pet.level} • Mood: {pet.mood.charAt(0).toUpperCase() + pet.mood.slice(1)}
             </Text>
           </View>
-        </View>
-      </ScrollView>
 
-      <BottomTabBar />
-    </SafeAreaView>
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Daily Goals</Text>
+
+            <View style={[styles.goalContainer, { backgroundColor: theme.card }]}>
+              <View style={styles.goalHeader}>
+                <Feather name="droplet" size={20} color={theme.water[0]} />
+                <Text style={[styles.goalTitle, { color: theme.text }]}>Water Intake</Text>
+              </View>
+              <View style={styles.goalInputContainer}>
+                <TextInput
+                  style={[styles.goalInput, { color: theme.text, borderColor: theme.border }]}
+                  value={waterGoal}
+                  onChangeText={setWaterGoal}
+                  onEndEditing={() => handleSaveGoal("water", waterGoal)}
+                  keyboardType="number-pad"
+                />
+                <Text style={[styles.goalUnit, { color: theme.text }]}>ml</Text>
+              </View>
+            </View>
+
+            <View style={[styles.goalContainer, { backgroundColor: theme.card }]}>
+              <View style={styles.goalHeader}>
+                <Feather name="activity" size={20} color={theme.exercise[0]} />
+                <Text style={[styles.goalTitle, { color: theme.text }]}>Exercise</Text>
+              </View>
+              <View style={styles.goalInputContainer}>
+                <TextInput
+                  style={[styles.goalInput, { color: theme.text, borderColor: theme.border }]}
+                  value={exerciseGoal}
+                  onChangeText={setExerciseGoal}
+                  onEndEditing={() => handleSaveGoal("exercise", exerciseGoal)}
+                  keyboardType="number-pad"
+                />
+                <Text style={[styles.goalUnit, { color: theme.text }]}>min</Text>
+              </View>
+            </View>
+
+            <View style={[styles.goalContainer, { backgroundColor: theme.card }]}>
+              <View style={styles.goalHeader}>
+                <Feather name="coffee" size={20} color={theme.food[0]} />
+                <Text style={[styles.goalTitle, { color: theme.text }]}>Healthy Eating</Text>
+              </View>
+              <View style={styles.goalInputContainer}>
+                <TextInput
+                  style={[styles.goalInput, { color: theme.text, borderColor: theme.border }]}
+                  value={foodGoal}
+                  onChangeText={setFoodGoal}
+                  onEndEditing={() => handleSaveGoal("food", foodGoal)}
+                  keyboardType="number-pad"
+                />
+                <Text style={[styles.goalUnit, { color: theme.text }]}>portions</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Settings</Text>
+
+            <View style={[styles.settingContainer, { backgroundColor: theme.card }]}>
+              <View style={styles.settingContent}>
+                <Feather name="moon" size={20} color={theme.text} />
+                <Text style={[styles.settingTitle, { color: theme.text }]}>Dark Mode</Text>
+              </View>
+              <Switch
+                value={isDark}
+                onValueChange={toggleTheme}
+                trackColor={{ false: "#767577", true: theme.accent + "80" }}
+                thumbColor={isDark ? theme.accent : "#f4f3f4"}
+              />
+            </View>
+
+            <View style={[styles.settingContainer, { backgroundColor: theme.card }]}>
+              <View style={styles.settingContent}>
+                <Feather name="bell" size={20} color={theme.text} />
+                <Text style={[styles.settingTitle, { color: theme.text }]}>Notifications</Text>
+              </View>
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={toggleNotifications}
+                trackColor={{ false: "#767577", true: theme.accent + "80" }}
+                thumbColor={notificationsEnabled ? theme.accent : "#f4f3f4"}
+              />
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>About</Text>
+
+            <View style={[styles.aboutContainer, { backgroundColor: theme.card }]}>
+              <Text style={[styles.appName, { color: theme.text }]}>HealthyHabits</Text>
+              <Text style={[styles.appVersion, { color: theme.text }]}>Version 1.0.0</Text>
+              <Text style={[styles.appDescription, { color: theme.text }]}>
+                Track your daily habits and stay healthy with your virtual pet companion.
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Cuenta</Text>
+
+            {user && (
+              <View style={[styles.accountContainer, { backgroundColor: theme.card }]}>
+                <Text style={[styles.emailText, { color: theme.text }]}>{user.email}</Text>
+              </View>
+            )}
+
+            <TouchableOpacity style={[styles.signOutButton, { backgroundColor: theme.error }]} onPress={handleSignOut}>
+              <Feather name="log-out" size={20} color="white" />
+              <Text style={styles.signOutText}>Cerrar Sesión</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+
+        <BottomTabBar />
+      </SafeAreaView>
+    </AuthGuard>
   )
 }
 
+// Añadir los nuevos estilos
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -293,6 +326,29 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     lineHeight: 20,
+  },
+
+  accountContainer: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  emailText: {
+    fontSize: 16,
+  },
+  signOutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 8,
+  },
+  signOutText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginLeft: 8,
   },
 })
 
