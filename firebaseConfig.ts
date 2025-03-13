@@ -7,13 +7,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 // En producción, usa variables de entorno o un método más seguro
 
 const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.FIREBASE_PROJECT_ID,
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-  appId:process.env.FIREBASE_APP_ID,
-  measurementId: process.env.FIREBASE_MEASUREMENT_ID,
+  apiKey: "AIzaSyDPMdvL6lf9uqNw9x6JcREjFWQ6rkx4JGY",
+  authDomain: "habit-tracker-b438a.firebaseapp.com",
+  projectId: "habit-tracker-b438a",
+  storageBucket: "habit-tracker-b438a.firebasestorage.app",
+  messagingSenderId: "917001546228",
+  appId: "1:917001546228:web:b46c5ef68539b28514f1a1",
+  measurementId: "G-MVYRB7JX2M"
 };
 
 // Inicializar Firebase solo si no existe ya una instancia
@@ -28,6 +28,8 @@ try {
     persistence: getReactNativePersistence(AsyncStorage),
   })
 }
+
+
 
 const db = getFirestore(app)
 

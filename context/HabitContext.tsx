@@ -64,6 +64,7 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [streaks, setStreaks] = useState<HabitStreak>(defaultStreaks)
   const { user } = useAuth()
 
+
   // Cargar datos desde Firestore cuando el usuario cambia
   useEffect(() => {
     const loadData = async () => {
@@ -77,6 +78,7 @@ export const HabitProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       try {
         // Cargar metas
+        
         const goalsDocRef = doc(db, `users/${user.uid}/habitGoals`, "goals")
         const goalsDoc = await getDoc(goalsDocRef)
 
