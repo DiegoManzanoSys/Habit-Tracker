@@ -49,6 +49,8 @@ interface ThemeContextType {
   theme: Theme
   isDark: boolean
   toggleTheme: () => void
+  notificationsEnabled: boolean
+  toggleNotifications: (value: boolean) => void
 }
 
 // Creación del contexto del tema con un valor inicial indefinido
@@ -57,11 +59,12 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 // Componente proveedor del tema
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isDark, setIsDark] = useState(false)
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true)
   const { user } = useAuth()
 
-  // Cargar el tema desde Firestore cuando el usuario cambia
+  // Cargar el tema y las preferencias de notificaciones desde Firestore cuando el usuario cambia
   useEffect(() => {
-    const loadTheme = async () => {
+    const loadPreferences = async () => {
       if (!user) return
 
       try {
@@ -70,31 +73,37 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         if (userDoc.exists()) {
           const userData = userDoc.data()
-          setIsDark(userData.Settings?.theme === "dark")
+          setIsDark(userData.settings?.theme === "dark")
+          setNotificationsEnabled(userData.settings?.notifications ?? true)
         }
       } catch (error) {
-        console.error("Error loading theme:", error)
+        console.error("Error loading preferences:", error)
       }
     }
 
-    loadTheme()
+    loadPreferences()
   }, [user])
 
-  // Guardar el tema en Firestore cuando cambia
+  // Guardar el tema y las preferencias de notificaciones en Firestore cuando cambian
   useEffect(() => {
-    const saveTheme = async () => {
+    const savePreferences = async () => {
       if (!user) return
 
       try {
         const userDocRef = doc(db, `users/${user.uid}`)
-        await setDoc(userDocRef, { Settings: { theme: isDark ? "dark" : "light" } }, { merge: true })
+        await setDoc(userDocRef, { 
+          Settings: 
+            { 
+              theme: isDark ? "dark" : "light", 
+              notifications: notificationsEnabled 
+            } }, { merge: true })
       } catch (error) {
-        console.error("Error saving theme:", error)
+        console.error("Error saving preferences:", error)
       }
     }
 
-    saveTheme()
-  }, [isDark, user])
+    savePreferences()
+  }, [isDark, notificationsEnabled, user])
 
   // Selección del tema basado en el estado isDark
   const theme = isDark ? darkTheme : lightTheme
@@ -104,8 +113,24 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setIsDark(!isDark)
   }
 
+  // Función para alternar las notificaciones
+  const toggleNotifications = async (value: boolean) => {
+    setNotificationsEnabled(value)
+
+    if (value) {
+      const { status } = await Notifications.requestPermissionsAsync()
+      if (status !== "granted") {
+        setNotificationsEnabled(false)
+      }
+    }
+  }
+
   // Proveedor del contexto del tema
-  return <ThemeContext.Provider value={{ theme, isDark, toggleTheme }}>{children}</ThemeContext.Provider>
+  return (
+    <ThemeContext.Provider value={{ theme, isDark, toggleTheme, notificationsEnabled, toggleNotifications }}>
+      {children}
+    </ThemeContext.Provider>
+  )
 }
 
 // Hook personalizado para usar el contexto del tema

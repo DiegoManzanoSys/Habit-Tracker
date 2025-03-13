@@ -16,7 +16,7 @@ import { useAuth } from "../context/AuthContext"
 
 // Modificar el componente ProfileScreen para usar AuthGuard y añadir la opción de cerrar sesión
 export default function ProfileScreen() {
-  const { theme, isDark, toggleTheme } = useTheme()
+  const { theme, isDark, toggleTheme, notificationsEnabled, toggleNotifications } = useTheme()
   const { goals, updateGoal } = useHabit()
   const { pet, setPetName } = usePet()
   const { signOut, user } = useAuth()
@@ -25,7 +25,6 @@ export default function ProfileScreen() {
   const [waterGoal, setWaterGoal] = useState(goals.water.toString())
   const [exerciseGoal, setExerciseGoal] = useState(goals.exercise.toString())
   const [foodGoal, setFoodGoal] = useState(goals.food.toString())
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true)
 
   const handleSaveGoal = (type: HabitType, value: string) => {
     const numValue = Number.parseInt(value, 10)
@@ -40,17 +39,6 @@ export default function ProfileScreen() {
     }
   }
 
-  const toggleNotifications = async (value: boolean) => {
-    setNotificationsEnabled(value)
-
-    if (value) {
-      const { status } = await Notifications.requestPermissionsAsync()
-      if (status !== "granted") {
-        setNotificationsEnabled(false)
-      }
-    }
-  }
-
   const handleSignOut = async () => {
     try {
       await signOut()
@@ -58,8 +46,6 @@ export default function ProfileScreen() {
       console.error("Error signing out:", error)
     }
   }
-
-  // Resto del código...
 
   return (
     <AuthGuard>
