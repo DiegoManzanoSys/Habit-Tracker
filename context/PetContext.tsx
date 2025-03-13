@@ -80,7 +80,7 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
 
-    if (user) {
+    if (user && pet !== initialPetState) {
       savePet()
     }
   }, [pet, user])
@@ -125,11 +125,16 @@ export const PetProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }
 
   // Modificar la función setPetName para usar Firestore
-  const setPetName = (name: string) => {
-    setPet((prev) => ({
-      ...prev,
-      name,
-    }))
+  const setPetName = async (name: string) => {
+    if (!user) return
+
+    try {
+      const newPet = { ...pet, name }
+      await setDoc(doc(db, `users/${user.uid}/pet`, "petData"), newPet)
+      setPet(newPet)
+    } catch (error) {
+      console.error("Error updating pet name:", error)
+    }
   }
 
   const interact = () => {

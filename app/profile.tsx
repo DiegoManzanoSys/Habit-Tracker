@@ -33,9 +33,9 @@ export default function ProfileScreen() {
     }
   }
 
-  const handleSavePetName = () => {
+  const handleSavePetName = async () => {
     if (petName.trim()) {
-      setPetName(petName.trim())
+      await setPetName(petName.trim())
     }
   }
 

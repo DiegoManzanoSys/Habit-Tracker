@@ -73,8 +73,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         if (userDoc.exists()) {
           const userData = userDoc.data()
-          setIsDark(userData.settings?.theme === "dark")
-          setNotificationsEnabled(userData.settings?.notifications ?? true)
+          setIsDark(userData.Settings?.theme === "dark")
+          setNotificationsEnabled(userData.Settings?.notifications ?? true)
         }
       } catch (error) {
         console.error("Error loading preferences:", error)
