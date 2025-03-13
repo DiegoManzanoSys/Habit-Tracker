@@ -12,10 +12,9 @@ import * as FileSystem from "expo-file-system"
 import { ThemeProvider } from "../context/ThemeContext"
 import { HabitProvider } from "../context/HabitContext"
 import { PetProvider } from "../context/PetContext"
-// Importar el AuthProvider
 import { AuthProvider } from "../context/AuthContext"
 
-// Configure notifications
+// Configurar notificaciones
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -24,6 +23,7 @@ Notifications.setNotificationHandler({
   }),
 })
 
+// Fuentes a cargar
 const fontsToLoad = {
   "Poppins-Regular": "https://fonts.gstatic.com/s/poppins/v20/pxiEyp8kv8JHgFVrFJA.ttf",
   "Poppins-Medium": "https://fonts.gstatic.com/s/poppins/v20/pxiByp8kv8JHgFVrLGT9V1s.ttf",
@@ -47,9 +47,12 @@ async function loadRemoteFont(name: string, url: string) {
   return fontPath
 }
 
+// Componente principal de la aplicación
 export default function RootLayout() {
+  // Estado para manejar si las fuentes están cargadas
   const [fontsLoaded, setFontsLoaded] = useState(false)
 
+  // Efecto para cargar las fuentes y solicitar permisos de notificaciones
   useEffect(() => {
     async function loadFonts() {
       try {
@@ -72,6 +75,7 @@ export default function RootLayout() {
     Notifications.requestPermissionsAsync()
   }, [])
 
+  // Mostrar pantalla de carga si las fuentes no están cargadas
   if (!fontsLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -80,20 +84,20 @@ export default function RootLayout() {
     )
   }
 
+  // Renderizar la aplicación con los proveedores de contexto
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <ThemeProvider>
-          {/* Añadir el AuthProvider entre ThemeProvider y HabitProvider */}
-          <AuthProvider>
+        <AuthProvider>
+          <ThemeProvider>
             <HabitProvider>
               <PetProvider>
                 <StatusBar style="auto" />
                 <Slot />
               </PetProvider>
             </HabitProvider>
-          </AuthProvider>
-        </ThemeProvider>
+          </ThemeProvider>
+        </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   )

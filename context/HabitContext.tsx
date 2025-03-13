@@ -13,7 +13,7 @@ export type HabitType = "water" | "exercise" | "food"
 
 // Reemplazar la interfaz HabitLog para incluir un ID de Firestore
 export interface HabitLog {
-  id: string
+  id?: string
   type: HabitType
   value: number
   date: string

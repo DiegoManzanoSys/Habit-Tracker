@@ -1,7 +1,12 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState } from "react"
+import { createContext, useContext, useState, useEffect } from "react"
+import { useAuth } from "./AuthContext"
+
+// Importar las dependencias de Firebase
+import { db } from "../firebaseConfig"
+import { doc, getDoc, setDoc } from "firebase/firestore"
 
 // Define the theme colors
 // Definición de los colores del tema claro
@@ -51,8 +56,46 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 // Componente proveedor del tema
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Estado para manejar si el tema es oscuro o claro
   const [isDark, setIsDark] = useState(false)
+  const { user } = useAuth()
+
+  // Cargar el tema desde Firestore cuando el usuario cambia
+  useEffect(() => {
+    const loadTheme = async () => {
+      if (!user) return
+
+      try {
+        const userDocRef = doc(db, `users/${user.uid}`)
+        const userDoc = await getDoc(userDocRef)
+
+        if (userDoc.exists()) {
+          const userData = userDoc.data()
+          setIsDark(userData.Settings?.theme === "dark")
+        }
+      } catch (error) {
+        console.error("Error loading theme:", error)
+      }
+    }
+
+    loadTheme()
+  }, [user])
+
+  // Guardar el tema en Firestore cuando cambia
+  useEffect(() => {
+    const saveTheme = async () => {
+      if (!user) return
+
+      try {
+        const userDocRef = doc(db, `users/${user.uid}`)
+        await setDoc(userDocRef, { Settings: { theme: isDark ? "dark" : "light" } }, { merge: true })
+      } catch (error) {
+        console.error("Error saving theme:", error)
+      }
+    }
+
+    saveTheme()
+  }, [isDark, user])
+
   // Selección del tema basado en el estado isDark
   const theme = isDark ? darkTheme : lightTheme
 
